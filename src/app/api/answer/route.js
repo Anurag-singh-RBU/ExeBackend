@@ -47,7 +47,6 @@ Give only correct option text.
     let answer =
       completion.choices[0].message.content.trim();
 
-    // Clean answer
     answer = answer.replace(/^\d+[\.\)]\s*/, "");
     answer = answer.replace(/option\s*\d*[:\-]?\s*/i, "");
     answer = answer.trim();
