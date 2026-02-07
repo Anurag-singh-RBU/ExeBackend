@@ -21,9 +21,13 @@ export async function POST(req) {
 
   try {
 
-    const { question, options } = await req.json();
+    const body = await req.json();
 
-    if(!options || options.length === 0){
+    const question = body.question || "";
+    const options = body.options || [];
+
+    // Hard check: if options missing, don't use AI
+    if(!Array.isArray(options) || options.length === 0){
 
       return new Response(
         JSON.stringify({
@@ -40,18 +44,13 @@ export async function POST(req) {
     }
 
     const prompt = `
-You are a smart and precise AI assistant.
+You are a smart AI assistant.
 
-Follow these rules strictly:
-
-1. If the question is an MCQ and options are given,
-   return only the correct option.
-
-2. If the question is theoretical,
-   give a clear and complete answer.
-
-3. Do NOT apologize.
-4. Do NOT give incomplete sentences.
+Rules:
+- Return only the correct option for MCQs.
+- Give clear answers for theory.
+- Do not apologize.
+- Do not write incomplete sentences.
 
 Question:
 ${question}
@@ -86,7 +85,7 @@ Answer:
         status: 200,
         headers: {
           ...corsHeaders,
-          "Content-Type": "application/json",
+          "Content-Type":"application/json"
         },
       }
     );
