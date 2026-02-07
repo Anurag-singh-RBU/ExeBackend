@@ -4,7 +4,8 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-// CORS headers
+// ================= CORS =================
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -18,21 +19,43 @@ export async function OPTIONS() {
   });
 }
 
+// ================= POST =================
+
 export async function POST(req) {
 
   try {
 
     const { question, options } = await req.json();
 
+    // Build prompt
     const prompt = `
-Question: ${question}
+You are a smart and precise AI assistant.
+
+Follow these rules strictly:
+
+1. If the question is an MCQ and options are missing or empty,
+   reply exactly with:
+   "You did not provide the options."
+
+2. If the question is an MCQ and options are given,
+   return only the correct option.
+
+3. If the question is theoretical,
+   give a clear and complete answer.
+
+4. Do NOT apologize.
+5. Do NOT give incomplete sentences.
+
+Question:
+${question}
 
 Options:
-${options.join(", ")}
+${options && options.length ? options.join(", ") : "NO_OPTIONS_PROVIDED"}
 
-Give only correct option text.
+Answer:
 `;
 
+    // Call Groq
     const completion = await groq.chat.completions.create({
 
       model: "llama-3.1-8b-instant",
@@ -44,13 +67,16 @@ Give only correct option text.
       temperature: 0
     });
 
+    // Extract answer
     let answer =
       completion.choices[0].message.content.trim();
 
+    // Cleanup formatting
     answer = answer.replace(/^\d+[\.\)]\s*/, "");
     answer = answer.replace(/option\s*\d*[:\-]?\s*/i, "");
     answer = answer.trim();
 
+    // Return response
     return new Response(
       JSON.stringify({ answer }),
       {
